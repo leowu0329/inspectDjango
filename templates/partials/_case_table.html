@@ -1,0 +1,24 @@
+{% for case in cases %}
+  <tr>
+    <td>{{ case.inspection_type }}</td>
+    <td>{{ case.sale_type }}</td>
+    <td>{{ case.customer }}</td>
+    <td>{{ case.department }}</td>
+    <td>{{ case.date|date:'Y/m/d' }}</td>
+    <td>{{ case.work_order_number }}</td>
+    <td>{{ case.drawing_revision }}</td>
+    <td>{{ case.part_number }}</td>
+    <td>{{ case.part_name }}</td>
+    <td>{{ case.quantity }}</td>
+    <td>{{ case.inspector }}</td>
+    <td>{{ case.defect_category }}</td>
+    <td>
+      <button type="button" class="btn btn-primary btn-sm me-1 edit-btn" data-bs-toggle="modal" data-bs-target="#editCaseModal" data-case-id="{{ case.pk }}"><i class="fas fa-edit"></i> 編輯</button>
+      <button type="button" class="btn btn-danger btn-sm delete-btn" data-case-id="{{ case.pk }}"><i class="fas fa-trash-alt"></i> 刪除</button>
+    </td>
+  </tr>
+{% empty %}
+  <tr>
+    <td colspan="13" class="text-center">查無資料</td>
+  </tr>
+{% endfor %}

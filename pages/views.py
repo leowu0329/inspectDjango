@@ -9,6 +9,8 @@ import string
 from datetime import timedelta
 from django.utils import timezone
 from decimal import Decimal
+from django.db.models import Q
+from django.template.loader import render_to_string
 
 from .models import Case
 from .forms import CaseForm
@@ -19,12 +21,53 @@ class HomePageView(LoginRequiredMixin, ListView):
 	context_object_name = 'cases'
 	login_url = 'login'
 
+	def get_queryset(self):
+		queryset = super().get_queryset().order_by('-created_at')
+		
+		query = self.request.GET.get('q')
+
+		if query:
+			# Create a Q object to search across multiple fields
+			filters = (
+				Q(customer__icontains=query) |
+				Q(work_order_number__icontains=query) |
+				Q(part_number__icontains=query) |
+				Q(part_name__icontains=query) |
+				Q(inspector__icontains=query) |
+				Q(defect_category__icontains=query)
+			)
+			# Handle date separately if query can be parsed as a date
+			try:
+				# This is a simple check, more robust parsing might be needed
+				from datetime import datetime
+				date_query = datetime.strptime(query, '%Y-%m-%d').date()
+				filters |= Q(date=date_query)
+			except ValueError:
+				pass # Not a valid date, ignore
+
+			return queryset.filter(filters)
+			
+		return queryset
+
 	def get_context_data(self, **kwargs):
 		context = super().get_context_data(**kwargs)
 		context['form'] = CaseForm()
-		# For Edit Modal
 		context['edit_form'] = CaseForm()
+		context['search_value'] = self.request.GET.get('q', '')
 		return context
+
+	def get(self, request, *args, **kwargs):
+		if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+			self.object_list = self.get_queryset()
+			context = self.get_context_data()
+			html = render_to_string(
+				'partials/_case_table.html',
+				context,
+				request=request
+			)
+			return JsonResponse({'html': html})
+		
+		return super().get(request, *args, **kwargs)
 
 @require_POST
 def create_case(request):
