@@ -4,6 +4,11 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404
 import json
+import random
+import string
+from datetime import timedelta
+from django.utils import timezone
+from decimal import Decimal
 
 from .models import Case
 from .forms import CaseForm
@@ -74,3 +79,34 @@ def delete_case(request, pk):
 		return JsonResponse({'status': 'success', 'message': '案例刪除成功！'})
 	except Exception as e:
 		return JsonResponse({'status': 'error', 'message': str(e)})
+
+@require_POST
+def add_random_cases(request):
+	try:
+		cases_to_create = []
+		department_choices = [c[0] for c in Case.DEPARTMENT_CHOICES if c[0]]
+		inspector_choices = [c[0] for c in Case.INSPECTOR_CHOICES]
+
+		for _ in range(20):
+			case = Case(
+				inspection_type=random.choice(['首件', '巡檢']),
+				sale_type=random.choice(['內銷', '外銷']),
+				customer=f"CUST-{''.join(random.choices(string.ascii_uppercase + string.digits, k=6))}",
+				department=random.choice(department_choices),
+				date=timezone.now().date() - timedelta(days=random.randint(0, 365)),
+				time=timezone.now().time(),
+				work_order_number=f"WO-{random.randint(10000, 99999)}",
+				operator=f"Operator-{random.randint(1, 10)}",
+				drawing_revision=f"v{random.randint(1, 5)}.{random.randint(0, 9)}",
+				part_number=f"PN-{''.join(random.choices(string.ascii_uppercase + string.digits, k=8))}",
+				part_name=f"Part-{random.choice(['Gear', 'Bolt', 'Nut', 'Plate', 'Shaft'])}",
+				quantity=random.randint(1, 1000),
+				inspector=random.choice(inspector_choices),
+				inspection_hours=round(Decimal(random.uniform(0.5, 8.0)), 2)
+			)
+			cases_to_create.append(case)
+		
+		Case.objects.bulk_create(cases_to_create)
+		return JsonResponse({'status': 'success', 'message': '成功新增 20 筆隨機資料！'})
+	except Exception as e:
+		return JsonResponse({'status': 'error', 'message': f"發生錯誤: {str(e)}"})
