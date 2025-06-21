@@ -22,9 +22,11 @@ class HomePageView(LoginRequiredMixin, ListView):
 	login_url = 'login'
 
 	def get_queryset(self):
-		queryset = super().get_queryset().order_by('-created_at')
+		queryset = super().get_queryset()
 		
+		# Get search and ordering parameters
 		query = self.request.GET.get('q')
+		ordering = self.request.GET.get('ordering', '-date') # Default to descending date
 
 		if query:
 			# Create a Q object to search across multiple fields
@@ -45,7 +47,10 @@ class HomePageView(LoginRequiredMixin, ListView):
 			except ValueError:
 				pass # Not a valid date, ignore
 
-			return queryset.filter(filters)
+			queryset = queryset.filter(filters)
+			
+		if ordering in ['date', '-date']:
+			queryset = queryset.order_by(ordering)
 			
 		return queryset
 
@@ -54,6 +59,7 @@ class HomePageView(LoginRequiredMixin, ListView):
 		context['form'] = CaseForm()
 		context['edit_form'] = CaseForm()
 		context['search_value'] = self.request.GET.get('q', '')
+		context['current_ordering'] = self.request.GET.get('ordering', '-date')
 		return context
 
 	def get(self, request, *args, **kwargs):
