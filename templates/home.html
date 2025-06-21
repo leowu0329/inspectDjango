@@ -1,71 +1,90 @@
 {% extends 'base.html' %}
 
-{% block title %}Home{% endblock %}
+{% block title %}
+  首頁
+{% endblock %}
 
 {% block css_style %}
-<style>
+  <style>
     .welcome-container {
-        max-width: 600px;
-        margin: 100px auto;
-        padding: 30px;
-        border-radius: 10px;
-        box-shadow: 0 0 20px rgba(0,0,0,0.1);
-        background-color: white;
+      max-width: 600px;
+      margin: 100px auto;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+      background-color: white;
     }
     .btn-logout {
-        width: 100%;
+      width: 100%;
     }
     .auth-links {
-        margin-top: 20px;
+      margin-top: 20px;
     }
-</style>
+  </style>
 {% endblock %}
 
 {% block content %}
-<div class="welcome-container text-center">
-    {% if user.is_authenticated %}
-        <h2 class="mb-4">Welcome back, <span class="text-primary">{{ user.username }}</span>!</h2>
-        <i class="fas fa-user-circle fa-5x mb-4 text-secondary"></i>
-        
-        <form action="{% url 'logout' %}" method="post" class="mb-3">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-danger btn-logout">
-                <i class="fas fa-sign-out-alt"></i> Logout
-            </button>
-        </form>
-        
-        <div class="d-grid gap-2">
-            <a href="#" class="btn btn-outline-primary">
-                <i class="fas fa-newspaper"></i> View Articles
-            </a>
+  <div class="container-fluid">
+    <h1 class="mb-4">檢驗總表</h1>
+    <div class="card">
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-striped table-bordered table-hover">
+            <thead class="table-dark">
+              <tr>
+                <th>首件巡檢</th>
+                <th>內/外銷</th>
+                <th>客戶</th>
+                <th>部門</th>
+                <th>日期</th>
+                <th>製令編號</th>
+                <th>圖面版次</th>
+                <th>品號</th>
+                <th>品名</th>
+                <th>數量</th>
+                <th>巡檢員</th>
+                <th>不良分類</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for case in cases %}
+                <tr>
+                  <td>{{ case.inspection_type }}</td>
+                  <td>{{ case.sale_type }}</td>
+                  <td>{{ case.customer }}</td>
+                  <td>{{ case.department }}</td>
+                  <td>{{ case.date|date:'Y/m/d' }}</td>
+                  <td>{{ case.work_order_number }}</td>
+                  <td>{{ case.drawing_revision }}</td>
+                  <td>{{ case.part_number }}</td>
+                  <td>{{ case.part_name }}</td>
+                  <td>{{ case.quantity }}</td>
+                  <td>{{ case.inspector }}</td>
+                  <td>{{ case.defect_category }}</td>
+                  <td>
+                    <a href="#" class="btn btn-primary btn-sm me-1"><i class="fas fa-edit"></i> 編輯</a>
+                    <a href="#" class="btn btn-danger btn-sm"><i class="fas fa-trash-alt"></i> 刪除</a>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="13" class="text-center">目前沒有任何案例</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
-    {% else %}
-        <h2 class="mb-4">Welcome to Newspaper App</h2>
-        <i class="fas fa-newspaper fa-5x mb-4 text-primary"></i>
-        
-        <p class="lead mb-4">You are not logged in</p>
-        
-        <div class="d-grid gap-2">
-            <a href="{% url 'login' %}" class="btn btn-primary">
-                <i class="fas fa-sign-in-alt"></i> Login
-            </a>
-            <a href="{% url 'signup' %}" class="btn btn-success">
-                <i class="fas fa-user-plus"></i> Sign Up
-            </a>
-        </div>
-        
-        <div class="auth-links">
-            <a href="#" class="text-muted">Forgot password?</a>
-        </div>
-    {% endif %}
-</div>
+      </div>
+    </div>
+  </div>
 {% endblock %}
 
 {% block extra_js %}
-<script>
-// You can add any page-specific JavaScript here if needed
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('Home page loaded');
-});
-</script>
+  <script>
+    // You can add any page-specific JavaScript here if needed
+    document.addEventListener('DOMContentLoaded', function () {
+      console.log('Home page loaded')
+    })
+  </script>
 {% endblock %}
