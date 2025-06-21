@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+
+{% block title %}
+  不良分類統計
+{% endblock %}
+
+{% block content %}
+  <div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1>不良分類統計圖</h1>
+      <a href="{% url 'home' %}" class="btn btn-secondary"><i class="fas fa-arrow-left me-2"></i>返回列表</a>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-body">
+        <form id="filter-form" class="row g-3 align-items-end">
+          <div class="col-md-5">
+            <label for="start_date" class="form-label fw-bold">起始日期</label>
+            <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date }}" />
+          </div>
+          <div class="col-md-5">
+            <label for="end_date" class="form-label fw-bold">截止日期</label>
+            <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date }}" />
+          </div>
+          <div class="col-md-2 d-grid">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-filter me-1"></i> 篩選</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <div style="width: 75%; margin: auto; min-height: 400px;">
+          <canvas id="defectPieChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        Chart.register(ChartDataLabels);
+
+        const ctx = document.getElementById('defectPieChart').getContext('2d');
+        let defectChart;
+
+        function createOrUpdateChart(labels, data) {
+            const total = data.reduce((acc, value) => acc + value, 0);
+
+            const chartData = {
+                labels: labels,
+                datasets: [{
+                    label: '不良數量',
+                    data: data,
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.7)',
+                        'rgba(54, 162, 235, 0.7)',
+                        'rgba(255, 206, 86, 0.7)',
+                        'rgba(75, 192, 192, 0.7)',
+                        'rgba(153, 102, 255, 0.7)',
+                        'rgba(255, 159, 64, 0.7)',
+                        'rgba(199, 199, 199, 0.7)',
+                        'rgba(83, 102, 255, 0.7)',
+                        'rgba(40, 159, 64, 0.7)'
+                    ],
+                    borderColor: '#fff',
+                    borderWidth: 2
+                }]
+            };
+
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                    },
+                    title: {
+                        display: true,
+                        text: '各類別不良品項數量分佈',
+                        font: { size: 18 }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) { label += ': '; }
+                                const value = context.parsed;
+                                const percentage = total > 0 ? ((value / total) * 100).toFixed(2) + '%' : '0.00%';
+                                label += `${value} (${percentage})`;
+                                return label;
+                            }
+                        }
+                    },
+                    datalabels: {
+                        formatter: (value, ctx) => {
+                            if (total === 0 || value === 0) return '';
+                            const percentage = (value / total * 100).toFixed(2) + "%";
+                            return `${value}\n(${percentage})`;
+                        },
+                        color: '#000',
+                        backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                        borderRadius: 4,
+                        padding: 6,
+                        font: {
+                            weight: 'bold',
+                            size: 13,
+                        },
+                    }
+                }
+            };
+
+            if (defectChart) {
+                defectChart.data = chartData;
+                defectChart.options = chartOptions;
+                defectChart.update();
+            } else {
+                defectChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: chartData,
+                    options: chartOptions
+                });
+            }
+        }
+
+        // Initial chart render
+        createOrUpdateChart({{ labels|safe }}, {{ data|safe }});
+
+        // Filter form submission logic
+        document.getElementById('filter-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const startDate = document.getElementById('start_date').value;
+            const endDate = document.getElementById('end_date').value;
+
+            if (startDate && endDate && startDate > endDate) {
+                alert('截止日期不可小於起始日期！');
+                return;
+            }
+            
+            const url = new URL("{% url 'case_pie_chart' %}", window.location.origin);
+            if (startDate) url.searchParams.set('start_date', startDate);
+            if (endDate) url.searchParams.set('end_date', endDate);
+
+            fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(response => response.json())
+                .then(newData => {
+                    createOrUpdateChart(newData.labels, newData.data);
+                })
+                .catch(error => console.error('篩選資料時發生錯誤:', error));
+        });
+    });
+</script>
+{% endblock %}

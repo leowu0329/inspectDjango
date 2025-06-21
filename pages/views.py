@@ -1,15 +1,16 @@
 from django.views.generic import ListView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 import json
 import random
 import string
 from datetime import timedelta
 from django.utils import timezone
 from decimal import Decimal
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.template.loader import render_to_string
 
 from .models import Case
@@ -181,8 +182,23 @@ def add_random_cases(request):
 		cases_to_create = []
 		department_choices = [c[0] for c in Case.DEPARTMENT_CHOICES if c[0]]
 		inspector_choices = [c[0] for c in Case.INSPECTOR_CHOICES]
+		defect_category_choices = [c[0] for c in Case.DEFECT_CATEGORY_CHOICES]
 
 		for _ in range(20):
+			# Decide if this case will have a defect
+			has_defect = random.choice([True, False, False]) # Make defects less common
+			defect_category = ""
+			defect_description = ""
+			disposition = ""
+
+			if has_defect:
+				# Exclude the empty choice
+				non_empty_defect_choices = [c for c in defect_category_choices if c]
+				if non_empty_defect_choices:
+					defect_category = random.choice(non_empty_defect_choices)
+					defect_description = f"不良狀況描述: {defect_category} - {''.join(random.choices(string.ascii_letters + string.digits, k=20))}"
+					disposition = f"處置對策: {''.join(random.choices(string.ascii_letters + string.digits, k=15))}"
+
 			case = Case(
 				inspection_type=random.choice(['首件', '巡檢']),
 				sale_type=random.choice(['內銷', '外銷']),
@@ -197,6 +213,9 @@ def add_random_cases(request):
 				part_name=f"Part-{random.choice(['Gear', 'Bolt', 'Nut', 'Plate', 'Shaft'])}",
 				quantity=random.randint(1, 1000),
 				inspector=random.choice(inspector_choices),
+				defect_category=defect_category,
+				defect_description=defect_description,
+				disposition=disposition,
 				inspection_hours=round(Decimal(random.uniform(0.5, 8.0)), 2)
 			)
 			cases_to_create.append(case)
@@ -205,3 +224,43 @@ def add_random_cases(request):
 		return JsonResponse({'status': 'success', 'message': '成功新增 20 筆隨機資料！'})
 	except Exception as e:
 		return JsonResponse({'status': 'error', 'message': f"發生錯誤: {str(e)}"})
+
+@login_required(login_url='login')
+def case_pie_chart_view(request):
+	start_date_str = request.GET.get('start_date')
+	end_date_str = request.GET.get('end_date')
+
+	# Start with the base query
+	cases = Case.objects.filter(defect_category__isnull=False).exclude(defect_category__exact='')
+
+	# Apply date filters if provided
+	if start_date_str:
+		cases = cases.filter(date__gte=start_date_str)
+	if end_date_str:
+		cases = cases.filter(date__lte=end_date_str)
+
+	# Aggregate data: count cases per defect category
+	data = (
+		cases.values('defect_category')
+		.annotate(count=Count('id'))
+		.order_by('-count')
+	)
+
+	labels = [item['defect_category'] for item in data]
+	counts = [item['count'] for item in data]
+
+	# For AJAX requests, return JSON
+	if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+		return JsonResponse({
+			'labels': labels,
+			'data': counts,
+		})
+
+	# For standard page loads, render the template with context
+	context = {
+		'labels': json.dumps(labels),
+		'data': json.dumps(counts),
+		'start_date': start_date_str or '',
+		'end_date': end_date_str or '',
+	}
+	return render(request, 'cases/casePieChart.html', context)
