@@ -1,0 +1,289 @@
+{% extends 'base.html' %}
+
+{% block title %}編輯個人資料{% endblock %}
+
+{% block css_style %}
+<style>
+    .profile-container {
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        background-color: white;
+    }
+    .profile-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    .profile-icon {
+        font-size: 2.5rem;
+        color: #17a2b8;
+        margin-bottom: 15px;
+    }
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    .form-label {
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+    .btn-save {
+        width: 100%;
+        padding: 12px;
+        font-weight: 500;
+        margin-top: 20px;
+    }
+    .readonly-field {
+        background-color: #f8f9fa;
+        opacity: 1;
+    }
+    .address-section {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+    .address-section h5 {
+        margin-bottom: 20px;
+        color: #495057;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="profile-header">
+        <div class="profile-icon">
+            <i class="fas fa-user-edit"></i>
+        </div>
+        <h2>編輯個人資料</h2>
+        <p class="text-muted">請更新您的個人資訊</p>
+    </div>
+    
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        {% if form.errors %}
+        <div class="alert alert-danger mb-4">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            請修正以下錯誤：
+            {% for field, errors in form.errors.items %}
+                {% for error in errors %}
+                    <div>{{ error }}</div>
+                {% endfor %}
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <!-- 基本資訊 -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="form-label">使用者名稱</label>
+                    <input type="text" class="form-control readonly-field" value="{{ user.username }}" readonly>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="form-label">電子郵件</label>
+                    <input type="email" class="form-control" name="email" value="{{ user.email|default_if_none:'' }}">
+                </div>
+            </div>
+        </div>
+        
+        <!-- 系統資訊 (唯讀) -->
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label class="form-label">建立時間</label>
+                    <input type="text" class="form-control readonly-field" value="{{ user.date_joined|date:'Y-m-d H:i' }}" readonly>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label class="form-label">更新時間</label>
+                    <input type="text" class="form-control readonly-field" value="{{ user.profile.updated_at|date:'Y-m-d H:i'|default_if_none:'' }}" readonly>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label class="form-label">最後登入時間</label>
+                    <input type="text" class="form-control readonly-field" value="{{ user.last_login|date:'Y-m-d H:i'|default_if_none:'' }}" readonly>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 權限與工作區域 -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="id_role" class="form-label">權限</label>
+                    <select class="form-select" id="id_role" name="role" disabled>
+                        <option value="guest" {% if user.profile.role == 'guest' %}selected{% endif %}>訪客</option>
+                        <option value="user" {% if user.profile.role == 'user' %}selected{% endif %}>一般使用者</option>
+                        <option value="admin" {% if user.profile.role == 'admin' %}selected{% endif %}>管理者</option>
+                    </select>
+                    <small class="text-muted">權限需由管理員修改</small>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="id_work_area" class="form-label">工作轄區</label>
+                    <select class="form-select" id="id_work_area" name="work_area">
+                        <option value="">請選擇工作轄區</option>
+                        <option value="north" {% if user.profile.work_area == 'north' %}selected{% endif %}>雙北桃竹苗</option>
+                        <option value="central" {% if user.profile.work_area == 'central' %}selected{% endif %}>中彰投</option>
+                        <option value="south" {% if user.profile.work_area == 'south' %}selected{% endif %}>雲嘉南</option>
+                        <option value="kaoping" {% if user.profile.work_area == 'kaoping' %}selected{% endif %}>高高屏</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 個人資訊 -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="id_personal_id" class="form-label">身分ID</label>
+                    <input type="text" class="form-control" id="id_personal_id" name="personal_id" value="{{ user.profile.personal_id|default_if_none:'' }}">
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="id_birthday" class="form-label">生日</label>
+                    <input type="date" class="form-control" id="id_birthday" name="birthday" value="{{ user.profile.birthday|date:'Y-m-d'|default_if_none:'' }}">
+                </div>
+            </div>
+        </div>
+        
+        <!-- 聯絡方式 -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="id_phone" class="form-label">市話</label>
+                    <input type="tel" class="form-control" id="id_phone" name="phone" value="{{ user.profile.phone|default_if_none:'' }}">
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="id_mobile" class="form-label">手機</label>
+                    <input type="tel" class="form-control" id="id_mobile" name="mobile" value="{{ user.profile.mobile|default_if_none:'' }}">
+                </div>
+            </div>
+        </div>
+        
+        <!-- 地址資訊 -->
+        <div class="address-section">
+            <h5><i class="fas fa-map-marker-alt me-2"></i>地址資訊</h5>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="id_city" class="form-label">縣市</label>
+                        <input type="text" class="form-control" id="id_city" name="city" value="{{ user.profile.city|default_if_none:'' }}">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="id_district" class="form-label">鄉鎮市區</label>
+                        <input type="text" class="form-control" id="id_district" name="district" value="{{ user.profile.district|default_if_none:'' }}">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="id_village" class="form-label">村裡</label>
+                        <input type="text" class="form-control" id="id_village" name="village" value="{{ user.profile.village|default_if_none:'' }}">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-2">
+                    <div class="form-group">
+                        <label for="id_neighbor" class="form-label">鄰</label>
+                        <input type="text" class="form-control" id="id_neighbor" name="neighbor" value="{{ user.profile.neighbor|default_if_none:'' }}">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="id_street" class="form-label">街路</label>
+                        <input type="text" class="form-control" id="id_street" name="street" value="{{ user.profile.street|default_if_none:'' }}">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group">
+                        <label for="id_section" class="form-label">段</label>
+                        <input type="text" class="form-control" id="id_section" name="section" value="{{ user.profile.section|default_if_none:'' }}">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group">
+                        <label for="id_lane" class="form-label">巷</label>
+                        <input type="text" class="form-control" id="id_lane" name="lane" value="{{ user.profile.lane|default_if_none:'' }}">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group">
+                        <label for="id_alley" class="form-label">弄</label>
+                        <input type="text" class="form-control" id="id_alley" name="alley" value="{{ user.profile.alley|default_if_none:'' }}">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-2">
+                    <div class="form-group">
+                        <label for="id_number" class="form-label">號</label>
+                        <input type="text" class="form-control" id="id_number" name="number" value="{{ user.profile.number|default_if_none:'' }}">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group">
+                        <label for="id_floor" class="form-label">樓</label>
+                        <input type="text" class="form-control" id="id_floor" name="floor" value="{{ user.profile.floor|default_if_none:'' }}">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="id_identity_type" class="form-label">身分別</label>
+                        <select class="form-select" id="id_identity_type" name="identity_type">
+                            <option value="public" {% if user.profile.identity_type == 'public' %}selected{% endif %}>公</option>
+                            <option value="private" {% if user.profile.identity_type == 'private' or not user.profile.identity_type %}selected{% endif %}>私</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary btn-save">
+                <i class="fas fa-save me-2"></i>儲存變更
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 手機號碼格式驗證
+    document.getElementById('id_mobile').addEventListener('blur', function() {
+        const mobile = this.value;
+        if (mobile && !/^09\d{8}$/.test(mobile)) {
+            alert('請輸入正確的手機號碼格式 (09開頭共10碼)');
+            this.focus();
+        }
+    });
+    
+    // 身分ID驗證 (假設是台灣身分證格式)
+    document.getElementById('id_personal_id').addEventListener('blur', function() {
+        const id = this.value.toUpperCase();
+        if (id && !/^[A-Z][12]\d{8}$/.test(id)) {
+            alert('請輸入正確的身分證字號格式');
+            this.focus();
+        }
+    });
+});
+</script>
+{% endblock %}

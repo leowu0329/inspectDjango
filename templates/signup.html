@@ -1,0 +1,362 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}註冊帳號{% endblock %}
+
+{% block css_style %}
+<style>
+    .signup-container {
+        max-width: 600px;
+        margin: 50px auto;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        background-color: white;
+    }
+    .signup-header {
+        text-align: center;
+        margin-bottom: 30px;
+        color: #2c3e50;
+    }
+    .btn-signup {
+        width: 100%;
+        padding: 12px;
+        font-weight: 600;
+        margin-top: 20px;
+    }
+    .login-link {
+        text-align: center;
+        margin-top: 20px;
+        padding-top: 15px;
+        border-top: 1px solid #eee;
+    }
+    .form-group {
+        margin-bottom: 1.5rem;
+        position: relative;
+    }
+    .form-group label {
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+    .form-control {
+        padding: 10px 15px;
+        border-radius: 5px;
+        border: 1px solid #ced4da;
+        width: 100%;
+        transition: border-color 0.15s ease-in-out;
+    }
+    .form-control:focus {
+        border-color: #80bdff;
+        outline: 0;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+    }
+    .form-text {
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+        transition: all 0.3s ease;
+        display: block;
+        color: #dc3545; /* Changed to red */
+    }
+    .form-text.hidden {
+        display: none;
+    }
+    .is-invalid {
+        border-color: #dc3545;
+    }
+    .invalid-feedback {
+        color: #dc3545;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+    .form-required {
+        color: #dc3545;
+        margin-left: 0.25rem;
+    }
+    .password-toggle-container {
+        position: relative;
+    }
+    .password-toggle {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        color: #6c757d;
+        z-index: 5;
+        background: none;
+        border: none;
+        padding: 0 8px;
+    }
+    .password-toggle:hover {
+        color: #495057;
+    }
+    .input-icon {
+        position: relative;
+    }
+    .input-icon i {
+        position: absolute;
+        left: 15px;
+        top: 10px;
+        color: #6c757d;
+    }
+    .input-icon input {
+        padding-left: 40px;
+    }
+    .password-input {
+        padding-right: 40px !important;
+    }
+    .password-requirements {
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+    }
+    .password-requirements ul {
+        padding-left: 1.5rem;
+        margin-bottom: 0;
+    }
+    .password-requirements li {
+        margin-bottom: 0.25rem;
+        color: #dc3545;
+        transition: all 0.3s ease;
+    }
+    .password-requirements li.requirement-met {
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="signup-container">
+    <div class="signup-header">
+        <h2><i class="fas fa-user-plus me-2"></i>註冊新帳號</h2>
+        <p class="text-muted">請填寫以下資料建立您的帳號</p>
+    </div>
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        {% if form.errors %}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong>註冊錯誤！</strong> 請檢查您輸入的資料是否正確。
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="關閉"></button>
+        </div>
+        {% endif %}
+        
+        <!-- 帳號欄位 -->
+        <div class="form-group">
+            <label for="id_username">
+                帳號<span class="form-required">*</span>
+            </label>
+            <div class="input-icon">
+                <i class="fas fa-user"></i>
+                <input type="text" name="username" class="form-control {% if form.username.errors %}is-invalid{% endif %}" 
+                       id="id_username" placeholder="請輸入3~150個字元的帳號" required
+                       value="{% if form.username.value %}{{ form.username.value }}{% endif %}">
+            </div>
+            <div id="username-help" class="form-text">必填。3~150個字元以內。僅允許字母、數字和 @/./+/-/_ 符號。</div>
+            {% for error in form.username.errors %}
+            <div class="invalid-feedback">{{ error }}</div>
+            {% endfor %}
+        </div>
+        
+        <!-- Email欄位 -->
+        <div class="form-group">
+            <label for="id_email">
+                電子郵件<span class="form-required">*</span>
+            </label>
+            <div class="input-icon">
+                <i class="fas fa-envelope"></i>
+                <input type="email" name="email" class="form-control {% if form.email.errors %}is-invalid{% endif %}" 
+                       id="id_email" placeholder="請輸入您的電子郵件" required
+                       value="{% if form.email.value %}{{ form.email.value }}{% endif %}">
+            </div>
+            {% if form.email.help_text %}
+            <small class="form-text">{{ form.email.help_text }}</small>
+            {% endif %}
+            {% for error in form.email.errors %}
+            <div class="invalid-feedback">{{ error }}</div>
+            {% endfor %}
+        </div>
+        
+        <!-- 密碼欄位 -->
+        <div class="form-group">
+            <label for="id_password1">
+                密碼<span class="form-required">*</span>
+            </label>
+            <div class="password-toggle-container">
+                <div class="input-icon">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" name="password1" class="form-control password-input {% if form.password1.errors %}is-invalid{% endif %}" 
+                           id="id_password1" placeholder="請輸入密碼" required>
+                </div>
+                <button type="button" class="password-toggle" id="togglePassword1">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
+            <div class="password-requirements">
+                <ul id="password-requirements-list">
+                    <li id="req-length">您的密碼必須至少包含8個字元</li>
+                    <li id="req-common">您的密碼不能是常見的密碼</li>
+                    <li id="req-numeric">您的密碼不能完全是數字</li>
+                    <li id="req-similar">您的密碼不能與其他個人資訊過於相似</li>
+                </ul>
+            </div>
+            {% for error in form.password1.errors %}
+            <div class="invalid-feedback">{{ error }}</div>
+            {% endfor %}
+        </div>
+        
+        <!-- 密碼確認欄位 -->
+        <div class="form-group">
+            <label for="id_password2">
+                密碼確認<span class="form-required">*</span>
+            </label>
+            <div class="password-toggle-container">
+                <div class="input-icon">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" name="password2" class="form-control password-input {% if form.password2.errors %}is-invalid{% endif %}" 
+                           id="id_password2" placeholder="請再次輸入密碼" required>
+                </div>
+                <button type="button" class="password-toggle" id="togglePassword2">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
+            <div id="password2-help" class="form-text">請再次輸入相同的密碼以確認</div>
+            {% for error in form.password2.errors %}
+            <div class="invalid-feedback">{{ error }}</div>
+            {% endfor %}
+        </div>
+        
+        <!-- 其他欄位 -->
+        {% for field in form %}
+            {% if field.name not in 'username,email,password1,password2' %}
+            <div class="form-group">
+                <label for="id_{{ field.name }}">
+                    {{ field.label }}{% if field.field.required %}<span class="form-required">*</span>{% endif %}
+                </label>
+                {{ field }}
+                {% if field.help_text %}
+                <small class="form-text">{{ field.help_text }}</small>
+                {% endif %}
+                {% for error in field.errors %}
+                <div class="invalid-feedback">{{ error }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        {% endfor %}
+        
+        <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary btn-signup">
+                <i class="fas fa-user-check me-2"></i>立即註冊
+            </button>
+        </div>
+    </form>
+    
+    <div class="login-link">
+        <p class="mb-0">已經有帳號了？ <a href="{% url 'login' %}"><i class="fas fa-sign-in-alt me-1"></i>前往登入</a></p>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 密碼可視化切換功能
+        function setupPasswordToggle(toggleId, inputId) {
+            const toggleBtn = document.querySelector(toggleId);
+            const passwordInput = document.querySelector(inputId);
+            const icon = toggleBtn.querySelector('i');
+            
+            toggleBtn.addEventListener('click', function() {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                
+                if (type === 'text') {
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            });
+        }
+        
+        setupPasswordToggle('#togglePassword1', '#id_password1');
+        setupPasswordToggle('#togglePassword2', '#id_password2');
+
+        // 帳號欄位驗證
+        const usernameInput = document.getElementById('id_username');
+        const usernameHelp = document.getElementById('username-help');
+        const usernameRegex = /^[a-zA-Z0-9@.+_-]+$/;
+        
+        usernameInput.addEventListener('input', function() {
+            const isValid = this.value.length >= 3 && 
+                          this.value.length <= 150 && 
+                          usernameRegex.test(this.value);
+            
+            if (isValid) {
+                usernameHelp.classList.add('hidden');
+            } else {
+                usernameHelp.classList.remove('hidden');
+            }
+        });
+
+        // 密碼強度驗證
+        const passwordInput = document.getElementById('id_password1');
+        
+        passwordInput.addEventListener('input', function() {
+            const password = this.value;
+            const username = document.getElementById('id_username').value;
+            const email = document.getElementById('id_email').value.split('@')[0];
+            const personalInfo = [username, email].filter(Boolean);
+            
+            // 檢查密碼長度
+            if (password.length >= 8) {
+                document.getElementById('req-length').classList.add('requirement-met');
+            } else {
+                document.getElementById('req-length').classList.remove('requirement-met');
+            }
+            
+            // 檢查是否常見密碼
+            const commonPasswords = ['password', '12345678', 'qwerty', 'abc123', 'password1', 'iloveyou'];
+            if (password.length > 0 && !commonPasswords.includes(password.toLowerCase())) {
+                document.getElementById('req-common').classList.add('requirement-met');
+            } else {
+                document.getElementById('req-common').classList.remove('requirement-met');
+            }
+            
+            // 檢查是否全是數字
+            if (password.length > 0 && !/^\d+$/.test(password)) {
+                document.getElementById('req-numeric').classList.add('requirement-met');
+            } else {
+                document.getElementById('req-numeric').classList.remove('requirement-met');
+            }
+            
+            // 檢查是否與個人資訊相似
+            if (password.length > 0 && !personalInfo.some(info => 
+                info && password.toLowerCase().includes(info.toLowerCase()))) {
+                document.getElementById('req-similar').classList.add('requirement-met');
+            } else {
+                document.getElementById('req-similar').classList.remove('requirement-met');
+            }
+        });
+
+        // 密碼確認驗證
+        const password1Input = document.getElementById('id_password1');
+        const password2Input = document.getElementById('id_password2');
+        const password2Help = document.getElementById('password2-help');
+        
+        function validatePasswordConfirm() {
+            const isValid = password2Input.value === password1Input.value && 
+                          password2Input.value.length > 0;
+            
+            if (isValid) {
+                password2Help.classList.add('hidden');
+            } else {
+                password2Help.classList.remove('hidden');
+            }
+        }
+        
+        password1Input.addEventListener('input', validatePasswordConfirm);
+        password2Input.addEventListener('input', validatePasswordConfirm);
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}Home{% endblock %}
+
+{% block css_style %}
+<style>
+    .welcome-container {
+        max-width: 600px;
+        margin: 100px auto;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        background-color: white;
+    }
+    .btn-logout {
+        width: 100%;
+    }
+    .auth-links {
+        margin-top: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="welcome-container text-center">
+    {% if user.is_authenticated %}
+        <h2 class="mb-4">Welcome back, <span class="text-primary">{{ user.username }}</span>!</h2>
+        <i class="fas fa-user-circle fa-5x mb-4 text-secondary"></i>
+        
+        <form action="{% url 'logout' %}" method="post" class="mb-3">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger btn-logout">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </form>
+        
+        <div class="d-grid gap-2">
+            <a href="#" class="btn btn-outline-primary">
+                <i class="fas fa-newspaper"></i> View Articles
+            </a>
+        </div>
+    {% else %}
+        <h2 class="mb-4">Welcome to Newspaper App</h2>
+        <i class="fas fa-newspaper fa-5x mb-4 text-primary"></i>
+        
+        <p class="lead mb-4">You are not logged in</p>
+        
+        <div class="d-grid gap-2">
+            <a href="{% url 'login' %}" class="btn btn-primary">
+                <i class="fas fa-sign-in-alt"></i> Login
+            </a>
+            <a href="{% url 'signup' %}" class="btn btn-success">
+                <i class="fas fa-user-plus"></i> Sign Up
+            </a>
+        </div>
+        
+        <div class="auth-links">
+            <a href="#" class="text-muted">Forgot password?</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// You can add any page-specific JavaScript here if needed
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Home page loaded');
+});
+</script>
+{% endblock %}
