@@ -35,16 +35,52 @@
     </div>
 
     <div class="card mb-4">
-      <div class="card-header">
-        <i class="fas fa-search me-1"></i>搜尋
-      </div>
+      <div class="card-header"><i class="fas fa-search me-1"></i>搜尋與篩選</div>
       <div class="card-body">
         <form id="search-form" method="get" action="{% url 'home' %}">
-          <div class="input-group">
-            <input type="text" name="q" class="form-control" placeholder="搜尋客戶、日期(YYYY-MM-DD)、製令編號、品號、品名、巡檢員..." value="{{ search_value }}" />
-            <a href="{% url 'home' %}" class="btn btn-secondary"><i class="fas fa-times"></i> 清除</a>
+          <div class="input-group mb-3">
+            <input type="text" name="q" class="form-control" placeholder="搜尋客戶、日期(YYYY-MM-DD)、製令編號、品號、品名、巡檢員..." value="{{ search_value }}">
+            <a href="{% url 'home' %}" class="btn btn-outline-secondary">
+              <i class="fas fa-times"></i> 清除
+            </a>
           </div>
-          <input type="hidden" name="ordering" id="ordering-input" value="{{ current_ordering }}" />
+          <div class="row g-2">
+            <div class="col-md-3">
+              <select name="inspection_type" class="form-select">
+                <option value="">所有首件/巡檢</option>
+                {% for value, display in inspection_type_choices %}
+                  <option value="{{ value }}" {% if filter_values.inspection_type == value %}selected{% endif %}>{{ display }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-3">
+              <select name="sale_type" class="form-select">
+                <option value="">所有內/外銷</option>
+                {% for value, display in sale_type_choices %}
+                  <option value="{{ value }}" {% if filter_values.sale_type == value %}selected{% endif %}>{{ display }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-3">
+              <select name="department" class="form-select">
+                <option value="">所有部門</option>
+                {% for value, display in department_choices %}
+                  {% if value %}
+                    <option value="{{ value }}" {% if filter_values.department == value %}selected{% endif %}>{{ display }}</option>
+                  {% endif %}
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-3">
+              <select name="inspector" class="form-select">
+                <option value="">所有巡檢員</option>
+                {% for value, display in inspector_choices %}
+                  <option value="{{ value }}" {% if filter_values.inspector == value %}selected{% endif %}>{{ display }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <input type="hidden" name="ordering" id="ordering-input" value="{{ current_ordering }}">
         </form>
       </div>
     </div>
@@ -284,6 +320,7 @@
       // --- Search Functionality ---
       const searchForm = document.getElementById('search-form')
       const searchInput = searchForm.querySelector('input[name="q"]')
+      const filterSelects = searchForm.querySelectorAll('select')
       const orderingInput = document.getElementById('ordering-input')
       const tableBody = document.getElementById('case-table-body')
       let debounceTimer
@@ -306,6 +343,10 @@
       searchInput.addEventListener('input', () => {
         clearTimeout(debounceTimer)
         debounceTimer = setTimeout(performSearch, 300)
+      })
+    
+      filterSelects.forEach(select => {
+        select.addEventListener('change', performSearch)
       })
     
       // --- Sort Functionality ---

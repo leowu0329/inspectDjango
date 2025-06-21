@@ -24,13 +24,19 @@ class HomePageView(LoginRequiredMixin, ListView):
 	def get_queryset(self):
 		queryset = super().get_queryset()
 		
-		# Get search and ordering parameters
+		# Get search, filter, and ordering parameters
 		query = self.request.GET.get('q')
-		ordering = self.request.GET.get('ordering', '-date') # Default to descending date
+		ordering = self.request.GET.get('ordering', '-date')
+		inspection_type = self.request.GET.get('inspection_type')
+		sale_type = self.request.GET.get('sale_type')
+		department = self.request.GET.get('department')
+		inspector = self.request.GET.get('inspector')
 
+		filters = Q()
+
+		# Apply text search query
 		if query:
-			# Create a Q object to search across multiple fields
-			filters = (
+			query_filters = (
 				Q(customer__icontains=query) |
 				Q(work_order_number__icontains=query) |
 				Q(part_number__icontains=query) |
@@ -38,16 +44,25 @@ class HomePageView(LoginRequiredMixin, ListView):
 				Q(inspector__icontains=query) |
 				Q(defect_category__icontains=query)
 			)
-			# Handle date separately if query can be parsed as a date
 			try:
-				# This is a simple check, more robust parsing might be needed
 				from datetime import datetime
 				date_query = datetime.strptime(query, '%Y-%m-%d').date()
-				filters |= Q(date=date_query)
+				query_filters |= Q(date=date_query)
 			except ValueError:
-				pass # Not a valid date, ignore
-
-			queryset = queryset.filter(filters)
+				pass
+			filters &= query_filters
+		
+		# Apply dropdown filters
+		if inspection_type:
+			filters &= Q(inspection_type=inspection_type)
+		if sale_type:
+			filters &= Q(sale_type=sale_type)
+		if department:
+			filters &= Q(department=department)
+		if inspector:
+			filters &= Q(inspector=inspector)
+			
+		queryset = queryset.filter(filters)
 			
 		if ordering in ['date', '-date']:
 			queryset = queryset.order_by(ordering)
@@ -60,6 +75,18 @@ class HomePageView(LoginRequiredMixin, ListView):
 		context['edit_form'] = CaseForm()
 		context['search_value'] = self.request.GET.get('q', '')
 		context['current_ordering'] = self.request.GET.get('ordering', '-date')
+		
+		# Pass choices and current filter values to template
+		context['inspection_type_choices'] = Case.INSPECTION_TYPE_CHOICES
+		context['sale_type_choices'] = Case.SALE_TYPE_CHOICES
+		context['department_choices'] = Case.DEPARTMENT_CHOICES
+		context['inspector_choices'] = Case.INSPECTOR_CHOICES
+		context['filter_values'] = {
+			'inspection_type': self.request.GET.get('inspection_type', ''),
+			'sale_type': self.request.GET.get('sale_type', ''),
+			'department': self.request.GET.get('department', ''),
+			'inspector': self.request.GET.get('inspector', ''),
+		}
 		return context
 
 	def get(self, request, *args, **kwargs):
