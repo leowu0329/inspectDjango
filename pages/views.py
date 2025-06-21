@@ -1,4 +1,4 @@
-from django.views.generic import ListView
+from django.views.generic import ListView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
@@ -115,6 +115,12 @@ class HomePageView(LoginRequiredMixin, ListView):
 		
 		return self.render_to_response(context)
 
+class CaseDetailView(LoginRequiredMixin, DetailView):
+	model = Case
+	template_name = 'cases/caseDetail.html'
+	context_object_name = 'case'
+	login_url = 'login'
+
 @require_POST
 def create_case(request):
 	form = CaseForm(request.POST)
@@ -126,7 +132,7 @@ def create_case(request):
 		errors = {field: error[0] for field, error in form.errors.items()}
 		return JsonResponse({'status': 'error', 'errors': errors})
 
-def case_detail(request, pk):
+def case_detail_view(request, pk):
 	case = get_object_or_404(Case, pk=pk)
 	data = {
 		'inspection_type': case.inspection_type,

@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block title %}
+  案例詳情 - {{ case.work_order_number }}
+{% endblock %}
+
+{% block content %}
+  <div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1>案例詳情</h1>
+      <a href="{% url 'home' %}" class="btn btn-secondary"><i class="fas fa-arrow-left me-2"></i>返回列表</a>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h4>製令編號: {{ case.work_order_number }}</h4>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6">
+            <p>
+              <strong>首件/巡檢:</strong> {{ case.get_inspection_type_display }}
+            </p>
+            <p>
+              <strong>內/外銷:</strong> {{ case.get_sale_type_display }}
+            </p>
+            <p>
+              <strong>客戶:</strong> {{ case.customer }}
+            </p>
+            <p>
+              <strong>部門:</strong> {{ case.get_department_display }}
+            </p>
+            <p>
+              <strong>日期:</strong> {{ case.date|date:'Y/m/d' }}
+            </p>
+            <p>
+              <strong>時間:</strong> {{ case.time|time:'H:i' }}
+            </p>
+            <p>
+              <strong>作業人員:</strong> {{ case.operator|default:'N/A' }}
+            </p>
+            <p>
+              <strong>圖面版次:</strong> {{ case.drawing_revision|default:'N/A' }}
+            </p>
+          </div>
+          <div class="col-md-6">
+            <p>
+              <strong>品號:</strong> {{ case.part_number|default:'N/A' }}
+            </p>
+            <p>
+              <strong>品名:</strong> {{ case.part_name|default:'N/A' }}
+            </p>
+            <p>
+              <strong>數量:</strong> {{ case.quantity }}
+            </p>
+            <p>
+              <strong>巡檢員:</strong> {{ case.get_inspector_display }}
+            </p>
+            <p>
+              <strong>不良分類:</strong> {{ case.get_defect_category_display|default:'N/A' }}
+            </p>
+            <p>
+              <strong>不良狀況:</strong> {{ case.defect_description|default:'N/A' }}
+            </p>
+            <p>
+              <strong>處置對策:</strong> {{ case.disposition|default:'N/A' }}
+            </p>
+            <p>
+              <strong>檢驗工時(時):</strong> {{ case.inspection_hours }}
+            </p>
+          </div>
+        </div>
+        <hr />
+        <div class="row">
+          <div class="col-md-6">
+            <p class="text-muted">
+              <small>建立時間: {{ case.created_at|date:'Y/m/d H:i:s' }}</small>
+            </p>
+          </div>
+          <div class="col-md-6 text-md-end">
+            <p class="text-muted">
+              <small>最後更新: {{ case.updated_at|date:'Y/m/d H:i:s' }}</small>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

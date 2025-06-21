@@ -5,7 +5,9 @@
     <td>{{ case.customer }}</td>
     <td>{{ case.department }}</td>
     <td>{{ case.date|date:'Y/m/d' }}</td>
-    <td>{{ case.work_order_number }}</td>
+    <td>
+      <a href="{% url 'case_detail_page' pk=case.pk %}">{{ case.work_order_number }}</a>
+    </td>
     <td>{{ case.drawing_revision }}</td>
     <td>{{ case.part_number }}</td>
     <td>{{ case.part_name }}</td>
