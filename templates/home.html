@@ -68,7 +68,7 @@
                   <td>{{ case.defect_category }}</td>
                   <td>
                     <button type="button" class="btn btn-primary btn-sm me-1 edit-btn" data-bs-toggle="modal" data-bs-target="#editCaseModal" data-case-id="{{ case.pk }}"><i class="fas fa-edit"></i> 編輯</button>
-                    <a href="#" class="btn btn-danger btn-sm"><i class="fas fa-trash-alt"></i> 刪除</a>
+                    <button type="button" class="btn btn-danger btn-sm delete-btn" data-case-id="{{ case.pk }}"><i class="fas fa-trash-alt"></i> 刪除</button>
                   </td>
                 </tr>
               {% empty %}
@@ -136,6 +136,23 @@
     })
     
     document.addEventListener('DOMContentLoaded', function () {
+      // --- CSRF Token for AJAX ---
+      function getCookie(name) {
+        let cookieValue = null
+        if (document.cookie && document.cookie !== '') {
+          const cookies = document.cookie.split(';')
+          for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim()
+            if (cookie.substring(0, name.length + 1) === name + '=') {
+              cookieValue = decodeURIComponent(cookie.substring(name.length + 1))
+              break
+            }
+          }
+        }
+        return cookieValue
+      }
+      const csrftoken = getCookie('csrftoken')
+    
       // --- Error Handling Function ---
       function handleFormErrors(form, errors) {
         // Clear previous errors
@@ -172,7 +189,7 @@
           fetch(addCaseForm.action, {
             method: 'POST',
             body: formData,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': csrftoken }
           })
             .then((response) => response.json())
             .then((data) => {
@@ -233,7 +250,7 @@
           fetch(editCaseForm.action, {
             method: 'POST',
             body: formData,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': csrftoken }
           })
             .then((response) => response.json())
             .then((data) => {
@@ -257,6 +274,47 @@
             })
         })
       }
+    
+      // --- Delete Case Functionality ---
+      document.querySelectorAll('.delete-btn').forEach((button) => {
+        button.addEventListener('click', function () {
+          const caseId = this.getAttribute('data-case-id')
+          const deleteUrl = `/case/${caseId}/delete/`
+    
+          Swal.fire({
+            title: '確定要刪除嗎？',
+            text: '這個操作無法復原！',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: '是的，刪除它！',
+            cancelButtonText: '取消'
+          }).then((result) => {
+            if (result.isConfirmed) {
+              fetch(deleteUrl, {
+                method: 'POST',
+                headers: {
+                  'X-Requested-With': 'XMLHttpRequest',
+                  'X-CSRFToken': csrftoken
+                }
+              })
+                .then((response) => response.json())
+                .then((data) => {
+                  if (data.status === 'success') {
+                    Swal.fire('已刪除！', data.message, 'success').then(() => location.reload())
+                  } else {
+                    Swal.fire('刪除失敗！', data.message, 'error')
+                  }
+                })
+                .catch((error) => {
+                  console.error('Error:', error)
+                  Swal.fire({ icon: 'error', title: '刪除失敗', text: '發生未預期的錯誤，請稍後再試。' })
+                })
+            }
+          })
+        })
+      })
     })
   </script>
 {% endblock %}

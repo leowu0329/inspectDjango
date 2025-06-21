@@ -65,3 +65,12 @@ def update_case(request, pk):
 	else:
 		errors = {field: error[0] for field, error in form.errors.items()}
 		return JsonResponse({'status': 'error', 'errors': errors})
+
+@require_POST
+def delete_case(request, pk):
+	try:
+		case = get_object_or_404(Case, pk=pk)
+		case.delete()
+		return JsonResponse({'status': 'success', 'message': '案例刪除成功！'})
+	except Exception as e:
+		return JsonResponse({'status': 'error', 'message': str(e)})
