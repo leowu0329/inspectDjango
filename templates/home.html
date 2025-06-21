@@ -67,7 +67,7 @@
                   <td>{{ case.inspector }}</td>
                   <td>{{ case.defect_category }}</td>
                   <td>
-                    <a href="#" class="btn btn-primary btn-sm me-1"><i class="fas fa-edit"></i> 編輯</a>
+                    <button type="button" class="btn btn-primary btn-sm me-1 edit-btn" data-bs-toggle="modal" data-bs-target="#editCaseModal" data-case-id="{{ case.pk }}"><i class="fas fa-edit"></i> 編輯</button>
                     <a href="#" class="btn btn-danger btn-sm"><i class="fas fa-trash-alt"></i> 刪除</a>
                   </td>
                 </tr>
@@ -92,7 +92,7 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <form id="addCaseForm" action="{% url 'create_case' %}" method="post">
+          <form id="addCaseForm" action="{% url 'create_case' %}" method="post" novalidate>
             {% csrf_token %}
             {{ form|crispy }}
           </form>
@@ -100,6 +100,28 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
           <button type="submit" form="addCaseForm" class="btn btn-primary">儲存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Case Modal -->
+  <div class="modal fade" id="editCaseModal" tabindex="-1" aria-labelledby="editCaseModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="editCaseModalLabel">編輯案例</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="editCaseForm" method="post" novalidate>
+            {% csrf_token %}
+            {{ edit_form|crispy }}
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
+          <button type="submit" form="editCaseForm" class="btn btn-primary">儲存變更</button>
         </div>
       </div>
     </div>
@@ -114,70 +136,127 @@
     })
     
     document.addEventListener('DOMContentLoaded', function () {
-      const addCaseForm = document.getElementById('addCaseForm')
+      // --- Error Handling Function ---
+      function handleFormErrors(form, errors) {
+        // Clear previous errors
+        form.querySelectorAll('.invalid-feedback').forEach((el) => el.remove())
+        form.querySelectorAll('.is-invalid').forEach((el) => el.classList.remove('is-invalid'))
     
-      addCaseForm.addEventListener('submit', function (e) {
-        e.preventDefault()
-    
-        const formData = new FormData(addCaseForm)
-    
-        fetch(addCaseForm.action, {
-          method: 'POST',
-          body: formData,
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest'
+        // Display new errors
+        for (const field in errors) {
+          const input = form.querySelector(`#id_${field}`)
+          if (input) {
+            input.classList.add('is-invalid')
+            const errorDiv = document.createElement('div')
+            errorDiv.className = 'invalid-feedback'
+            errorDiv.innerText = errors[field]
+            // Insert after input, or after its wrapper if it's a special field
+            const parent = input.closest('.mb-3') || input.parentNode
+            parent.appendChild(errorDiv)
           }
+        }
+        Swal.fire({
+          icon: 'error',
+          title: '錯誤',
+          text: '表單提交失敗，請檢查輸入的資料。'
         })
-          .then((response) => response.json())
-          .then((data) => {
-            if (data.status === 'success') {
-              // 關閉 modal
-              const modal = bootstrap.Modal.getInstance(document.getElementById('addCaseModal'))
-              modal.hide()
+      }
     
-              // 顯示 success alert
-              Swal.fire({
-                icon: 'success',
-                title: '成功',
-                text: data.message,
-                timer: 1500,
-                showConfirmButton: false
-              }).then(() => {
-                // 重新整理頁面以顯示新資料
-                location.reload()
-              })
-            } else if (data.status === 'error') {
-              // 清除舊的錯誤訊息
-              document.querySelectorAll('.invalid-feedback').forEach((el) => el.remove())
-              document.querySelectorAll('.is-invalid').forEach((el) => el.classList.remove('is-invalid'))
+      // --- Add Case Form Submission ---
+      const addCaseForm = document.getElementById('addCaseForm')
+      if (addCaseForm) {
+        addCaseForm.addEventListener('submit', function (e) {
+          e.preventDefault()
+          const formData = new FormData(addCaseForm)
     
-              // 顯示新的錯誤訊息
-              for (const field in data.errors) {
-                const input = document.getElementById(`id_${field}`)
+          fetch(addCaseForm.action, {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              if (data.status === 'success') {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addCaseModal'))
+                modal.hide()
+                Swal.fire({
+                  icon: 'success',
+                  title: '成功',
+                  text: data.message,
+                  timer: 1500,
+                  showConfirmButton: false
+                }).then(() => location.reload())
+              } else if (data.status === 'error') {
+                handleFormErrors(addCaseForm, data.errors)
+              }
+            })
+            .catch((error) => {
+              console.error('Error:', error)
+              Swal.fire({ icon: 'error', title: '提交失敗', text: '發生未預期的錯誤，請稍後再試。' })
+            })
+        })
+      }
+    
+      // --- Edit Case Functionality ---
+      const editCaseModal = document.getElementById('editCaseModal')
+      if (editCaseModal) {
+        const editCaseForm = document.getElementById('editCaseForm')
+    
+        // Event listener for showing the modal
+        editCaseModal.addEventListener('show.bs.modal', function (event) {
+          const button = event.relatedTarget
+          const caseId = button.getAttribute('data-case-id')
+          const detailUrl = `/case/${caseId}/`
+          const updateUrl = `/case/${caseId}/update/`
+    
+          editCaseForm.setAttribute('action', updateUrl)
+    
+          // Fetch case data and populate the form
+          fetch(detailUrl)
+            .then((response) => response.json())
+            .then((data) => {
+              for (const field in data) {
+                const input = editCaseForm.querySelector(`[name="${field}"]`)
                 if (input) {
-                  input.classList.add('is-invalid')
-                  const errorDiv = document.createElement('div')
-                  errorDiv.className = 'invalid-feedback'
-                  errorDiv.innerText = data.errors[field]
-                  input.parentNode.appendChild(errorDiv)
+                  input.value = data[field]
                 }
               }
-              Swal.fire({
-                icon: 'error',
-                title: '錯誤',
-                text: '表單提交失敗，請檢查輸入的資料。'
-              })
-            }
-          })
-          .catch((error) => {
-            console.error('Error:', error)
-            Swal.fire({
-              icon: 'error',
-              title: '提交失敗',
-              text: '發生未預期的錯誤，請稍後再試。'
             })
+            .catch((error) => console.error('Error fetching case details:', error))
+        })
+    
+        // Event listener for form submission
+        editCaseForm.addEventListener('submit', function (e) {
+          e.preventDefault()
+          const formData = new FormData(editCaseForm)
+    
+          fetch(editCaseForm.action, {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
           })
-      })
+            .then((response) => response.json())
+            .then((data) => {
+              if (data.status === 'success') {
+                const modal = bootstrap.Modal.getInstance(editCaseModal)
+                modal.hide()
+                Swal.fire({
+                  icon: 'success',
+                  title: '成功',
+                  text: data.message,
+                  timer: 1500,
+                  showConfirmButton: false
+                }).then(() => location.reload())
+              } else if (data.status === 'error') {
+                handleFormErrors(editCaseForm, data.errors)
+              }
+            })
+            .catch((error) => {
+              console.error('Error:', error)
+              Swal.fire({ icon: 'error', title: '更新失敗', text: '發生未預期的錯誤，請稍後再試。' })
+            })
+        })
+      }
     })
   </script>
 {% endblock %}
