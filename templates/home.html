@@ -46,7 +46,7 @@
           </div>
           <div class="row g-2">
             <div class="col-md-3">
-              <select name="inspection_type" class="form-select">
+              <select name="inspection_type" class="form-select filter-select">
                 <option value="">所有首件/巡檢</option>
                 {% for value, display in inspection_type_choices %}
                   <option value="{{ value }}" {% if filter_values.inspection_type == value %}selected{% endif %}>{{ display }}</option>
@@ -54,7 +54,7 @@
               </select>
             </div>
             <div class="col-md-3">
-              <select name="sale_type" class="form-select">
+              <select name="sale_type" class="form-select filter-select">
                 <option value="">所有內/外銷</option>
                 {% for value, display in sale_type_choices %}
                   <option value="{{ value }}" {% if filter_values.sale_type == value %}selected{% endif %}>{{ display }}</option>
@@ -62,7 +62,7 @@
               </select>
             </div>
             <div class="col-md-3">
-              <select name="department" class="form-select">
+              <select name="department" class="form-select filter-select">
                 <option value="">所有部門</option>
                 {% for value, display in department_choices %}
                   {% if value %}
@@ -72,7 +72,7 @@
               </select>
             </div>
             <div class="col-md-3">
-              <select name="inspector" class="form-select">
+              <select name="inspector" class="form-select filter-select">
                 <option value="">所有巡檢員</option>
                 {% for value, display in inspector_choices %}
                   <option value="{{ value }}" {% if filter_values.inspector == value %}selected{% endif %}>{{ display }}</option>
@@ -81,6 +81,8 @@
             </div>
           </div>
           <input type="hidden" name="ordering" id="ordering-input" value="{{ current_ordering }}">
+          <input type="hidden" name="page" id="page-input" value="{{ page_obj.number }}">
+          <input type="hidden" name="per_page" id="per-page-input" value="{{ current_per_page }}">
         </form>
       </div>
     </div>
@@ -120,6 +122,9 @@
               {% include 'partials/_case_table.html' with cases=cases %}
             </tbody>
           </table>
+        </div>
+        <div id="pagination-controls" class="mt-3">
+          {% include 'partials/_pagination.html' %}
         </div>
       </div>
     </div>
@@ -320,13 +325,20 @@
       // --- Search Functionality ---
       const searchForm = document.getElementById('search-form')
       const searchInput = searchForm.querySelector('input[name="q"]')
-      const filterSelects = searchForm.querySelectorAll('select')
+      const filterSelects = searchForm.querySelectorAll('.filter-select')
       const orderingInput = document.getElementById('ordering-input')
+      const pageInput = document.getElementById('page-input')
+      const perPageInput = document.getElementById('per-page-input')
       const tableBody = document.getElementById('case-table-body')
+      const paginationControls = document.getElementById('pagination-controls')
       let debounceTimer
     
-      function performSearch() {
+      function performSearch(page = 1) {
+        pageInput.value = page
         const params = new URLSearchParams(new FormData(searchForm))
+    
+        // Show a loading indicator in the table body
+        tableBody.innerHTML = `<tr><td colspan="13" class="text-center"><div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>`
     
         fetch(`{% url 'home' %}?${params.toString()}`, {
           headers: {
@@ -335,18 +347,22 @@
         })
           .then((response) => response.json())
           .then((data) => {
-            tableBody.innerHTML = data.html
+            tableBody.innerHTML = data.table_html
+            paginationControls.innerHTML = data.pagination_html
           })
-          .catch((error) => console.error('Search error:', error))
+          .catch((error) => {
+            console.error('Search error:', error)
+            tableBody.innerHTML = `<tr><td colspan="13" class="text-center text-danger">搜尋失敗，請稍後再試。</td></tr>`
+          })
       }
     
       searchInput.addEventListener('input', () => {
         clearTimeout(debounceTimer)
-        debounceTimer = setTimeout(performSearch, 300)
+        debounceTimer = setTimeout(() => performSearch(1), 300)
       })
     
       filterSelects.forEach(select => {
-        select.addEventListener('change', performSearch)
+        select.addEventListener('change', () => performSearch(1))
       })
     
       // --- Sort Functionality ---
@@ -357,9 +373,37 @@
           const currentOrder = orderingInput.value
           const newOrder = currentOrder === 'date' ? '-date' : 'date'
           orderingInput.value = newOrder
-          performSearch()
+          performSearch(1)
         })
       }
+    
+      // --- Pagination Click Handler ---
+      paginationControls.addEventListener('click', function (e) {
+        const pageLink = e.target.closest('a.page-link')
+        const perPageSelect = e.target.closest('select[name="per_page"]')
+
+        if (pageLink) {
+          e.preventDefault()
+          const url = new URL(pageLink.href)
+          const page = url.searchParams.get('page')
+          if (page) {
+            performSearch(page)
+          }
+        }
+        
+        if (perPageSelect) {
+          // This event is handled by its own listener now
+          return
+        }
+      })
+
+      paginationControls.addEventListener('change', function(e) {
+        const perPageSelect = e.target.closest('select[name="per_page"]')
+        if (perPageSelect) {
+          perPageInput.value = perPageSelect.value
+          performSearch(1)
+        }
+      })
     
       // --- Add Random Cases Functionality ---
       const addRandomCasesBtn = document.getElementById('addRandomCasesBtn')

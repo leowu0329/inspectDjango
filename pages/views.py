@@ -20,6 +20,10 @@ class HomePageView(LoginRequiredMixin, ListView):
 	template_name = 'home.html'
 	context_object_name = 'cases'
 	login_url = 'login'
+	paginate_by = 10  # Default items per page
+
+	def get_paginate_by(self, queryset):
+		return self.request.GET.get('per_page', self.paginate_by)
 
 	def get_queryset(self):
 		queryset = super().get_queryset()
@@ -87,20 +91,29 @@ class HomePageView(LoginRequiredMixin, ListView):
 			'department': self.request.GET.get('department', ''),
 			'inspector': self.request.GET.get('inspector', ''),
 		}
+		context['per_page_options'] = [10, 25, 50, 100]
+		context['current_per_page'] = self.get_paginate_by(self.object_list)
 		return context
 
 	def get(self, request, *args, **kwargs):
+		# This will call get_queryset, paginate it, and put the objects in the context
+		self.object_list = self.get_queryset()
+		context = self.get_context_data()
+
 		if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-			self.object_list = self.get_queryset()
-			context = self.get_context_data()
-			html = render_to_string(
+			table_html = render_to_string(
 				'partials/_case_table.html',
+				{'cases': context['cases']}, # 'cases' is the paginated list
+				request=request
+			)
+			pagination_html = render_to_string(
+				'partials/_pagination.html',
 				context,
 				request=request
 			)
-			return JsonResponse({'html': html})
+			return JsonResponse({'table_html': table_html, 'pagination_html': pagination_html})
 		
-		return super().get(request, *args, **kwargs)
+		return self.render_to_response(context)
 
 @require_POST
 def create_case(request):
