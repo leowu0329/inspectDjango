@@ -8,14 +8,7 @@
   <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h1>日報(晨會資料)</h1>
-      <div>
-        <span class="ms-3 text-danger fw-bold">
-          塑膠射出課-尺寸NG：{{ plastic_size_ng }}
-        </span>
-        <span class="ms-3 text-primary fw-bold">
-          射出加工組-尺寸NG：{{ injection_size_ng }}
-        </span>
-      </div>
+      
     </div>
 
     <div class="card mb-4">
@@ -249,9 +242,16 @@
   </script>
 {% endblock %}
 
-<style>
-  .count-highlight {
-    font-size: 1.25em;
-    font-weight: bold;
-  }
-</style>
+{% block css_style %}
+  <style>
+    .count-highlight {
+      font-size: 1.25em;
+      font-weight: bold;
+      color: blue;
+    }
+    .table td, .table th {
+      vertical-align: middle;
+      text-align: center;
+    }
+  </style>
+{% endblock %}
