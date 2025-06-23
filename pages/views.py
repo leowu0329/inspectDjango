@@ -335,6 +335,16 @@ def case_daily_view(request):
         for dept in size_ng_departments
     }
 
+    size_ng_percentages = {}
+    for dept in size_ng_departments:
+        ng_count = size_ng_counts.get(dept, 0)
+        total_batches = batch_counts.get(dept, 0)
+        if total_batches > 0:
+            percentage = f"{(ng_count / total_batches) * 100:.2f}"
+        else:
+            percentage = "0.00"
+        size_ng_percentages[dept] = percentage
+
     appearance_ng_departments = [
         '塑膠射出課', '射出加工組', '機械加工課', '繞線區', '泵浦組裝組', '電機組立課', '燒崁組立課'
     ]
@@ -343,11 +353,31 @@ def case_daily_view(request):
         for dept in appearance_ng_departments
     }
 
+    appearance_ng_percentages = {}
+    for dept in appearance_ng_departments:
+        ng_count = appearance_ng_counts.get(dept, 0)
+        total_batches = batch_counts.get(dept, 0)
+        if total_batches > 0:
+            percentage = f"{(ng_count / total_batches) * 100:.2f}"
+        else:
+            percentage = "0.00"
+        appearance_ng_percentages[dept] = percentage
+
     no_drawing_departments = ['塑膠射出課', '射出加工組', '機械加工課']
     no_drawing_counts = {
         dept: cases.filter(department=dept, defect_category='無圖面').count()
         for dept in no_drawing_departments
     }
+
+    no_drawing_percentages = {}
+    for dept in no_drawing_departments:
+        count = no_drawing_counts.get(dept, 0)
+        total = batch_counts.get(dept, 0)
+        if total > 0:
+            percentage = f"{(count / total) * 100:.2f}"
+        else:
+            percentage = "0.00"
+        no_drawing_percentages[dept] = percentage
 
     drawing_mismatch_departments = ['塑膠射出課', '射出加工組', '機械加工課', '繞線區']
     drawing_mismatch_counts = {
@@ -355,14 +385,43 @@ def case_daily_view(request):
         for dept in drawing_mismatch_departments
     }
 
+    drawing_mismatch_percentages = {}
+    for dept in drawing_mismatch_departments:
+        mismatch_count = drawing_mismatch_counts.get(dept, 0)
+        total_batches = batch_counts.get(dept, 0)
+        if total_batches > 0:
+            percentage = f"{(mismatch_count / total_batches) * 100:.2f}"
+        else:
+            percentage = "0.00"
+        drawing_mismatch_percentages[dept] = percentage
+
     resistance_abnormal_count = cases.filter(department='繞線區', defect_category='電阻異常').count()
 
+    resistance_abnormal_percentage = "0.00"
+    winding_area_batch_count = batch_counts.get('繞線區', 0)
+    if winding_area_batch_count > 0:
+        resistance_abnormal_percentage = f"{(resistance_abnormal_count / winding_area_batch_count) * 100:.2f}"
+
     pump_characteristic_abnormal_count = cases.filter(department='泵浦組裝組', defect_category='特性異常').count()
+
+    pump_characteristic_abnormal_percentage = "0.00"
+    pump_batch_count = batch_counts.get('泵浦組裝組', 0)
+    if pump_batch_count > 0:
+        pump_characteristic_abnormal_percentage = f"{(pump_characteristic_abnormal_count / pump_batch_count) * 100:.2f}"
 
     torque_abnormal_counts = {
         '泵浦組裝組': cases.filter(department='泵浦組裝組', defect_category='扭力值異常').count(),
         '電機組立課': cases.filter(department='電機組立課', defect_category='扭力值異常').count(),
     }
+
+    torque_abnormal_percentages = {}
+    for dept, count in torque_abnormal_counts.items():
+        total_batches = batch_counts.get(dept, 0)
+        if total_batches > 0:
+            percentage = f"{(count / total_batches) * 100:.2f}"
+        else:
+            percentage = "0.00"
+        torque_abnormal_percentages[dept] = percentage
 
     sop_abnormal_counts = {
         '泵浦組裝組': cases.filter(department='泵浦組裝組', defect_category='SOP異常').count(),
@@ -370,7 +429,21 @@ def case_daily_view(request):
         '燒崁組立課': cases.filter(department='燒崁組立課', defect_category='SOP異常').count(),
     }
 
+    sop_abnormal_percentages = {}
+    for dept, count in sop_abnormal_counts.items():
+        total_batches = batch_counts.get(dept, 0)
+        if total_batches > 0:
+            percentage = f"{(count / total_batches) * 100:.2f}"
+        else:
+            percentage = "0.00"
+        sop_abnormal_percentages[dept] = percentage
+
     electrical_untestable_count = cases.filter(department='電機組立課', defect_category='無法檢測').count()
+
+    electrical_untestable_percentage = "0.00"
+    electrical_batch_count = batch_counts.get('電機組立課', 0)
+    if electrical_batch_count > 0:
+        electrical_untestable_percentage = f"{(electrical_untestable_count / electrical_batch_count) * 100:.2f}"
 
     no_form_counts = {
         '塑膠射出課': cases.filter(department='塑膠射出課', defect_category='無檢驗表單').count(),
@@ -381,7 +454,14 @@ def case_daily_view(request):
         '燒崁組立課': cases.filter(department='燒崁組立課', defect_category='無檢驗表單').count(),
     }
 
-
+    no_form_percentages = {}
+    for dept, count in no_form_counts.items():
+        total_batches = batch_counts.get(dept, 0)
+        if total_batches > 0:
+            percentage = f"{(count / total_batches) * 100:.2f}"
+        else:
+            percentage = "0.00"
+        no_form_percentages[dept] = percentage
 
     routing_slip_abnormal_counts = {
         '塑膠射出課': cases.filter(department='塑膠射出課', defect_category='途程單異常').count(),
@@ -391,6 +471,15 @@ def case_daily_view(request):
         '電機組立課': cases.filter(department='電機組立課', defect_category='途程單異常').count(),
         '燒崁組立課': cases.filter(department='燒崁組立課', defect_category='途程單異常').count(),
     }
+
+    routing_slip_abnormal_percentages = {}
+    for dept, count in routing_slip_abnormal_counts.items():
+        total_batches = batch_counts.get(dept, 0)
+        if total_batches > 0:
+            percentage = f"{(count / total_batches) * 100:.2f}"
+        else:
+            percentage = "0.00"
+        routing_slip_abnormal_percentages[dept] = percentage
 
     context = {
         'stats': stats,
@@ -403,15 +492,26 @@ def case_daily_view(request):
         'end_date': end_date or '',
         'size_ng_departments': size_ng_departments,
         'size_ng_counts': size_ng_counts,
+        'size_ng_percentages': size_ng_percentages,
         'appearance_ng_counts': appearance_ng_counts,
+        'appearance_ng_percentages': appearance_ng_percentages,
         'no_drawing_counts': no_drawing_counts,
+        'no_drawing_percentages': no_drawing_percentages,
         'drawing_mismatch_counts': drawing_mismatch_counts,
+        'drawing_mismatch_percentages': drawing_mismatch_percentages,
         'resistance_abnormal_count': resistance_abnormal_count,
+        'resistance_abnormal_percentage': resistance_abnormal_percentage,
         'pump_characteristic_abnormal_count': pump_characteristic_abnormal_count,
+        'pump_characteristic_abnormal_percentage': pump_characteristic_abnormal_percentage,
         'torque_abnormal_counts': torque_abnormal_counts,
+        'torque_abnormal_percentages': torque_abnormal_percentages,
         'sop_abnormal_counts': sop_abnormal_counts,
+        'sop_abnormal_percentages': sop_abnormal_percentages,
         'electrical_untestable_count': electrical_untestable_count,
+        'electrical_untestable_percentage': electrical_untestable_percentage,
         'no_form_counts': no_form_counts,
+        'no_form_percentages': no_form_percentages,
         'routing_slip_abnormal_counts': routing_slip_abnormal_counts,
+        'routing_slip_abnormal_percentages': routing_slip_abnormal_percentages,
     }
     return render(request, 'cases/caseDaily.html', context)
