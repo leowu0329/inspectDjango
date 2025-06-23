@@ -1,0 +1,225 @@
+{% extends 'base.html' %}
+
+{% block title %}
+  IPQC 異常日報
+{% endblock %}
+
+{% block content %}
+  <div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1>日報(晨會資料)</h1>
+      <span class="ms-3 text-danger fw-bold">
+        塑膠射出課-尺寸NG：{{ plastic_size_ng }}
+      </span>
+      <span class="ms-3 text-primary fw-bold">
+        射出加工組-尺寸NG：{{ injection_size_ng }}
+      </span>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-body">
+        <form id="dateRangeForm" class="row g-3 align-items-end" autocomplete="off" onsubmit="return false;">
+          <div class="col-md-5">
+            <label for="startDate" class="form-label fw-bold">起始日期</label>
+            <input type="date" class="form-control" id="startDate" name="startDate" value="{{ start_date }}" />
+          </div>
+          <div class="col-md-5">
+            <label for="endDate" class="form-label fw-bold">截止日期</label>
+            <input type="date" class="form-control" id="endDate" name="endDate" value="{{ end_date }}" />
+          </div>
+        </form>
+      </div>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-bordered align-middle text-center" style="font-size: 0.95rem;">
+        <thead class="table-light">
+          <tr>
+            <th colspan="2" rowspan="2">
+              組別<br />IPQC
+            </th>
+            <th colspan="13">統計區間</th>
+          </tr>
+          <tr>
+            <th colspan="13">{{ start_date }}~{{ end_date }}</th>
+          </tr>
+          <tr>
+            <th rowspan="2">部門別</th>
+            <th rowspan="2">
+              抽檢批數<br />合計{% if batch_total %}
+                ({{ batch_total }})
+              {% endif %}
+            </th>
+            <th colspan="11">IPQC 異常回饋(統計區間：{{ start_date }}~{{ end_date }})</th>
+          </tr>
+          <tr>
+            {% for cat in defect_categories %}
+              <th>{{ cat }}</th>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td>塑膠射出課</td>
+            <td>{{ batch_counts.塑膠射出課 }}</td>
+            <td>{{ size_ng_counts.塑膠射出課 }}</td>
+            <td>{{ appearance_ng_counts.塑膠射出課 }}</td>
+            <td>{{ no_drawing_counts.塑膠射出課 }}</td>
+            <td>{{ drawing_mismatch_counts.塑膠射出課 }}</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>{{ no_form_counts.塑膠射出課 }}</td>
+            <td>{{ routing_slip_abnormal_counts.塑膠射出課 }}</td>
+          </tr>
+          <tr>
+            <td>射出加工組</td>
+            <td>{{ batch_counts.射出加工組 }}</td>
+            <td>{{ size_ng_counts.射出加工組 }}</td>
+            <td>{{ appearance_ng_counts.射出加工組 }}</td>
+            <td>{{ no_drawing_counts.射出加工組 }}</td>
+            <td>{{ drawing_mismatch_counts.射出加工組 }}</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>{{ no_form_counts.射出加工組 }}</td>
+            <td>{{ routing_slip_abnormal_counts.射出加工組 }}</td>
+          </tr>
+          <tr>
+            <td>機械加工課</td>
+            <td>{{ batch_counts.機械加工課 }}</td>
+            <td>{{ size_ng_counts.機械加工課 }}</td>
+            <td>{{ appearance_ng_counts.機械加工課 }}</td>
+            <td>{{ no_drawing_counts.機械加工課 }}</td>
+            <td>{{ drawing_mismatch_counts.機械加工課 }}</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>{{ no_form_counts.機械加工課 }}</td>
+            <td>{{ routing_slip_abnormal_counts.機械加工課 }}</td>
+          </tr>
+          <tr>
+            <td>繞線區</td>
+            <td>{{ batch_counts.繞線區 }}</td>
+            <td>{{ size_ng_counts.繞線區 }}</td>
+            <td>{{ appearance_ng_counts.繞線區 }}</td>
+            <td></td>
+            <td>{{ drawing_mismatch_counts.繞線區 }}</td>
+            <td>{{ resistance_abnormal_count }}</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>泵浦組裝組</td>
+            <td>{{ batch_counts.泵浦組裝組 }}</td>
+            <td></td>
+            <td>{{ appearance_ng_counts.泵浦組裝組 }}</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>{{ pump_characteristic_abnormal_count }}</td>
+            <td>{{ torque_abnormal_counts.泵浦組裝組 }}</td>
+            <td>{{ sop_abnormal_counts.泵浦組裝組 }}</td>
+            <td></td>
+            <td>{{ no_form_counts.泵浦組裝組 }}</td>
+            <td>{{ routing_slip_abnormal_counts.泵浦組裝組 }}</td>
+          </tr>
+          <tr>
+            <td>電機組立課</td>
+            <td>{{ batch_counts.電機組立課 }}</td>
+            <td></td>
+            <td>{{ appearance_ng_counts.電機組立課 }}</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>{{ torque_abnormal_counts.電機組立課 }}</td>
+            <td>{{ sop_abnormal_counts.電機組立課 }}</td>
+            <td>{{ electrical_untestable_count }}</td>
+            <td>{{ no_form_counts.電機組立課 }}</td>
+            <td>{{ routing_slip_abnormal_counts.電機組立課 }}</td>
+          </tr>
+          <tr>
+            <td>燒崁組立課</td>
+            <td>{{ batch_counts.燒崁組立課 }}</td>
+            <td></td>
+            <td>{{ appearance_ng_counts.燒崁組立課 }}</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>{{ sop_abnormal_counts.燒崁組立課 }}</td>
+            <td></td>
+            <td>{{ no_form_counts.燒崁組立課 }}</td>
+            <td>{{ routing_slip_abnormal_counts.燒崁組立課 }}</td>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+  <script>
+    function pad(n) {
+      return n < 10 ? '0' + n : n
+    }
+    function getToday() {
+      const d = new Date()
+      return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
+    }
+    function getMonthFirst() {
+      const d = new Date()
+      return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-01'
+    }
+    
+    const startDate = document.getElementById('startDate')
+    const endDate = document.getElementById('endDate')
+    
+    // 頁面載入自動填入本月1日和今天，並自動跳轉帶查詢參數
+    document.addEventListener('DOMContentLoaded', function () {
+      const url = new URL(window.location.href)
+      const hasStart = url.searchParams.has('start_date')
+      const hasEnd = url.searchParams.has('end_date')
+      if (!startDate.value) startDate.value = getMonthFirst()
+      if (!endDate.value) endDate.value = getToday()
+      if (!hasStart || !hasEnd) {
+        url.searchParams.set('start_date', startDate.value)
+        url.searchParams.set('end_date', endDate.value)
+        window.location.replace(url.toString())
+        return
+      }
+    })
+    
+    function validateDates() {
+      if (startDate.value && endDate.value && endDate.value < startDate.value) {
+        endDate.setCustomValidity('截止日期不可小於起始日期')
+        endDate.reportValidity()
+      } else {
+        endDate.setCustomValidity('')
+      }
+    }
+    
+    startDate.addEventListener('change', function () {
+      validateDates()
+      if (startDate.value && endDate.value && endDate.value >= startDate.value) {
+        window.location.search = `?start_date=${startDate.value}&end_date=${endDate.value}`
+      }
+    })
+    endDate.addEventListener('change', function () {
+      validateDates()
+      if (startDate.value && endDate.value && endDate.value >= startDate.value) {
+        window.location.search = `?start_date=${startDate.value}&end_date=${endDate.value}`
+      }
+    })
+  </script>
+{% endblock %}

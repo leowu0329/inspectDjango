@@ -10,4 +10,5 @@ urlpatterns = [
 	path('case/add-random/', views.add_random_cases, name='add_random_cases'),
 	path('case/detail/<int:pk>/', views.CaseDetailView.as_view(), name='case_detail_page'),
 	path('case/pie-chart/', views.case_pie_chart_view, name='case_pie_chart'),
+	path('case/daily/', views.case_daily_view, name='case_daily'),
 ]
