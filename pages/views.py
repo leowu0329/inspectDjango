@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404, render
 import json
 import random
 import string
-from datetime import timedelta
+from datetime import timedelta, date
 from django.utils import timezone
 from decimal import Decimal
 from django.db.models import Q, Count
@@ -275,9 +275,14 @@ def case_pie_chart_view(request):
 
 
 def case_daily_view(request):
-    # 取得日期篩選
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
+
+    # 預設為本月1號~今天
+    if not start_date:
+        start_date = date.today().replace(day=1).isoformat()
+    if not end_date:
+        end_date = date.today().isoformat()
 
     cases = Case.objects.all()
     if start_date:
